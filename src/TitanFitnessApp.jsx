@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Activity, Target, TrendingUp, Bell, Calendar, Utensils, Settings, ChevronRight, Play, Award, Flame, Menu, X, BarChart, Clock } from 'lucide-react';
+import { Activity, Target, TrendingUp, Bell, Calendar, Utensils, Settings, ChevronRight, Play, Award, Flame, Menu, X, BarChart } from 'lucide-react';
 
 // Função para calcular o Índice de Massa Corporal (IMC)
 const calculateBMI = (weight, height) => {
@@ -8,47 +8,37 @@ const calculateBMI = (weight, height) => {
   return (weight / (heightMeters * heightMeters)).toFixed(1);
 };
 
-// Função para carregar o GIF (Simulação de URLs)
-const getExerciseGif = (exerciseId) => {
-    // Estas são URLs de Giphy de exemplo. Substitua por URLs reais de GIFs ou vídeos hospedados por você.
-    const gifs = {
-        'flexoes': 'https://media.giphy.com/media/l4pT2p1iK0jRjWvC8/giphy.gif', 
-        'agachamento': 'https://media.giphy.com/media/3o7bucjYy9d2rXGk88/giphy.gif', 
-        'prancha': 'https://media.giphy.com/media/wMtrNq403bJ3a/giphy.gif', 
-        'elevacao': 'https://media.giphy.com/media/3o7buhaBw36R1MhR8A/giphy.gif', 
-        'ponte': 'https://media.giphy.com/media/26hiryQ0c81x5iYQ0/giphy.gif', 
-        'pular_corda': 'https://media.giphy.com/media/l0HlTL1jP3vM93Wn6/giphy.gif', 
-    };
-    return gifs[exerciseId] || '';
-};
-
 // Componente Principal
 const App = () => {
   const [darkMode, setDarkMode] = useState(true);
   const [currentView, setCurrentView] = useState('home');
-  const [userData, setUserData] = useState(() => {
-    const savedData = localStorage.getItem('titanFitnessUserData');
-    return savedData ? JSON.parse(savedData) : {
-      name: '',
-      age: '',
-      weight: '',
-      height: '',
-      goal: 'muscle', // 'muscle' or 'weight_loss'
-      hasProfile: false
-    };
+  const [userData, setUserData] = useState({
+    name: '',
+    age: '',
+    weight: '',
+    height: '',
+    goal: 'muscle',
+    hasProfile: false
   });
   
+  const [formData, setFormData] = useState({
+    name: '',
+    age: '',
+    weight: '',
+    height: '',
+    goal: 'muscle'
+  });
+
   const [exercises] = useState([
-    { id: 'flexoes', name: 'Flexões', target: 'Peitoral', icon: '💪', color: 'from-red-500 to-orange-500', isTimeBased: false },
-    { id: 'agachamento', name: 'Agachamento', target: 'Quadríceps e Panturrilha', icon: '🦵', color: 'from-blue-500 to-cyan-500', isTimeBased: false },
-    { id: 'prancha', name: 'Prancha', target: 'Abdômen', icon: '🔥', color: 'from-yellow-500 to-orange-500', isTimeBased: true }, // <--- TIME BASED
-    { id: 'elevacao', name: 'Elevação', target: 'Costas', icon: '⬆️', color: 'from-green-500 to-emerald-500', isTimeBased: false },
-    { id: 'ponte', name: 'Ponte Glútea', target: 'Glúteos e Posterior', icon: '🍑', color: 'from-purple-500 to-pink-500', isTimeBased: false },
-    { id: 'pular_corda', name: 'Pular Corda', target: 'Cardio e Resistência', icon: '🏃', color: 'from-cyan-500 to-blue-500', isTimeBased: false }
+    { id: 'flexoes', name: 'Flexões', target: 'Peitoral', icon: '💪', color: 'from-red-500 to-orange-500' },
+    { id: 'agachamento', name: 'Agachamento', target: 'Quadríceps e Panturrilha', icon: '🦵', color: 'from-blue-500 to-cyan-500' },
+    { id: 'prancha', name: 'Prancha', target: 'Abdômen', icon: '🔥', color: 'from-yellow-500 to-orange-500' },
+    { id: 'elevacao', name: 'Elevação', target: 'Costas', icon: '⬆️', color: 'from-green-500 to-emerald-500' },
+    { id: 'ponte', name: 'Ponte Glútea', target: 'Glúteos e Posterior', icon: '🍑', color: 'from-purple-500 to-pink-500' },
+    { id: 'pular_corda', name: 'Pular Corda', target: 'Cardio e Resistência', icon: '🏃', color: 'from-cyan-500 to-blue-500' }
   ]);
 
   const foodDatabase = [
-    // ... (Mantendo seu banco de dados de alimentos local)
     { name: 'Arroz branco cozido', calories: 130, category: 'Carboidratos', unit: '100g', emoji: '🍚' },
     { name: 'Arroz integral cozido', calories: 110, category: 'Carboidratos', unit: '100g', emoji: '🍚' },
     { name: 'Macarrão cozido', calories: 131, category: 'Carboidratos', unit: '100g', emoji: '🍝' },
@@ -109,36 +99,52 @@ const App = () => {
     { name: 'Mel', calories: 304, category: 'Outros', unit: '100g', emoji: '🍯' },
     { name: 'Chocolate ao leite', calories: 535, category: 'Outros', unit: '100g', emoji: '🍫' },
     { name: 'Pipoca sem manteiga', calories: 387, category: 'Outros', unit: '100g', emoji: '🍿' }
-  ];
+  ]);
 
-  const [workoutData, setWorkoutData] = useState(() => {
-    const savedData = localStorage.getItem('titanFitnessWorkoutData');
-    return savedData ? JSON.parse(savedData) : {};
-  });
-
+  const [workoutData, setWorkoutData] = useState({});
   const [assessmentMode, setAssessmentMode] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState(null);
   
-  const [calorieTracking, setCalorieTracking] = useState(() => {
-    const savedData = localStorage.getItem('titanFitnessCalorieTracking');
-    return savedData ? JSON.parse(savedData) : {
-      enabled: false,
-      dailyGoal: 2000,
-      consumed: 0,
-      meals: []
-    };
+  const [calorieTracking, setCalorieTracking] = useState({
+    enabled: false,
+    dailyGoal: 2000,
+    consumed: 0,
+    meals: []
   });
   
-  const [history, setHistory] = useState(() => {
-    const savedData = localStorage.getItem('titanFitnessHistory');
-    return savedData ? JSON.parse(savedData) : [];
-  });
-  
+  const [history, setHistory] = useState([]);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [isTraining, setIsTraining] = useState(false); // Novo estado para treino ao vivo
-  const [exerciseGif, setExerciseGif] = useState(''); // Estado para o GIF
 
-  // Efeito para persistir os dados no localStorage sempre que eles mudarem
+  // Estados para o cronômetro
+  const [currentDay, setCurrentDay] = useState(null);
+  const [timer, setTimer] = useState(0);
+  const [isRunning, setIsRunning] = useState(false);
+  const [repsCount, setRepsCount] = useState(0);
+
+  // Carregar dados do localStorage
+  useEffect(() => {
+    const savedUserData = localStorage.getItem('titanFitnessUserData');
+    const savedWorkoutData = localStorage.getItem('titanFitnessWorkoutData');
+    const savedCalorieData = localStorage.getItem('titanFitnessCalorieTracking');
+    const savedHistory = localStorage.getItem('titanFitnessHistory');
+
+    if (savedUserData) {
+      const parsedData = JSON.parse(savedUserData);
+      setUserData(parsedData);
+      setFormData({
+        name: parsedData.name || '',
+        age: parsedData.age || '',
+        weight: parsedData.weight || '',
+        height: parsedData.height || '',
+        goal: parsedData.goal || 'muscle'
+      });
+    }
+    if (savedWorkoutData) setWorkoutData(JSON.parse(savedWorkoutData));
+    if (savedCalorieData) setCalorieTracking(JSON.parse(savedCalorieData));
+    if (savedHistory) setHistory(JSON.parse(savedHistory));
+  }, []);
+
+  // Persistir dados no localStorage
   useEffect(() => {
     if (userData.hasProfile) {
       localStorage.setItem('titanFitnessUserData', JSON.stringify(userData));
@@ -147,6 +153,17 @@ const App = () => {
     localStorage.setItem('titanFitnessCalorieTracking', JSON.stringify(calorieTracking));
     localStorage.setItem('titanFitnessHistory', JSON.stringify(history));
   }, [userData, workoutData, calorieTracking, history]);
+
+  // Efeito para o cronômetro
+  useEffect(() => {
+    let interval;
+    if (isRunning && currentDay?.countType === 'time') {
+      interval = setInterval(() => {
+        setTimer(prev => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isRunning, currentDay]);
 
   const bg = darkMode ? 'bg-gray-900' : 'bg-gray-50';
   const cardBg = darkMode ? 'bg-gray-800' : 'bg-white';
@@ -157,60 +174,62 @@ const App = () => {
   const calculateTMB = useMemo(() => {
     if (!userData.weight || !userData.height || !userData.age) return 2500;
     
-    // Fórmula de Harris-Benedict simplificada (assumindo gênero masculino para exemplo)
     const tmb = 88.362 + (13.397 * userData.weight) + (4.799 * userData.height) - (5.677 * userData.age);
     
     if (userData.goal === 'weight_loss') {
-      return Math.round(tmb * 1.2 - 500); // Déficit calórico leve
+      return Math.round(tmb * 1.2 - 500);
     } else {
-      return Math.round(tmb * 1.5 + 300); // Superávit calórico leve
+      return Math.round(tmb * 1.5 + 300);
     }
   }, [userData.weight, userData.height, userData.age, userData.goal]);
 
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
   const startAssessment = (exercise) => {
     setSelectedExercise(exercise);
-    setExerciseGif(getExerciseGif(exercise.id)); // <--- CARREGA O GIF
     setAssessmentMode(true);
   };
 
-  // Alterada para 5 Séries e Dia 7 de Reavaliação
   const generateWorkoutPlan = (maxReps, exerciseId) => {
     const days = [];
-    let currentReps = maxReps;
-    
-    // Se for prancha (baseado em tempo), o valor inicial é o maxReps, mas usaremos a metade para o treino
-    if (exercises.find(ex => ex.id === exerciseId)?.isTimeBased) {
-        currentReps = Math.floor(maxReps * 0.5); 
-        if (currentReps < 10) currentReps = 10;
-    } else {
-        currentReps = Math.floor(maxReps * 0.6);
-        if (currentReps < 5) currentReps = 5;
-    }
+    let currentReps = Math.floor(maxReps * 0.6);
+    if (currentReps < 5) currentReps = 5;
 
+    const isTimeBased = exerciseId === 'prancha';
 
     for (let i = 1; i <= 7; i++) {
-      if (i === 7) { // Dia 7 é o dia de reavaliação
-         days.push({
-          day: i,
-          type: 'reavaliacao',
-          completed: false
-        });
-      } else if (i % 2 === 1) { // Dias de treino (1, 3, 5)
+      if (i % 2 === 1) {
         days.push({
           day: i,
-          sets: 5, // <--- ALTERADO DE 3 PARA 5 SÉRIES
-          reps: currentReps + Math.floor((i - 1) * 0.25), // Progressão para dias de treino
+          sets: 5,
+          reps: isTimeBased ? 30 : currentReps + Math.floor((i - 1) * 0.25),
           rest: 60,
           type: 'treino',
-          completed: false
+          completed: false,
+          timer: isTimeBased ? 30 : null,
+          countType: isTimeBased ? 'time' : 'reps'
         });
-      } else { // Dias de descanso (2, 4, 6)
+      } else {
         days.push({
           day: i,
-          type: 'descanso'
+          type: 'descanso',
+          completed: false
         });
       }
     }
+    
+    days.push({
+      day: 8,
+      type: 'avaliacao',
+      completed: false,
+      description: 'Teste de repetições máximas'
+    });
+    
     return days;
   };
 
@@ -223,20 +242,19 @@ const App = () => {
         currentLevel: 1,
         maxReps: reps,
         history: [{date: new Date().toISOString(), reps}],
-        plan: generateWorkoutPlan(reps, selectedExercise.id) // Passa o ID
+        plan: generateWorkoutPlan(reps, selectedExercise.id)
       }
     };
     setWorkoutData(newWorkoutData);
     setAssessmentMode(false);
   };
 
-  const logWorkoutCompletion = (exerciseId, repsCompleted, isReassessment = false) => {
+  const logWorkoutCompletion = (exerciseId, repsCompleted) => {
     const today = new Date().toISOString().split('T')[0];
     const exerciseData = workoutData[exerciseId];
 
     if (!exerciseData) return;
 
-    // Atualiza o histórico geral e do exercício
     const newEntry = { 
       date: today, 
       exerciseId: exerciseId, 
@@ -247,21 +265,18 @@ const App = () => {
     
     const updatedHistory = [...exerciseData.history, newEntry];
     
-    // Marca o dia de hoje como completo (treino ou reavaliação)
-    const todayDay = new Date().getDay() + 1; // 1=Dom...7=Sáb
     const updatedPlan = exerciseData.plan.map(day => 
-      day.day === todayDay ? { ...day, completed: true } : day
+      day.type === 'treino' && day.day === new Date().getDay() + 1 ? { ...day, completed: true } : day
     );
 
-    // Lógica simples de progressão de nível / reavaliação
     let newLevel = exerciseData.currentLevel;
     let newMaxReps = exerciseData.maxReps;
     let newPlan = updatedPlan;
 
-    if (repsCompleted > exerciseData.maxReps * 1.1 || isReassessment) { // 10% de aumento ou reavaliação
+    if (repsCompleted > exerciseData.maxReps * 1.1) {
       newMaxReps = repsCompleted;
       newLevel += 1;
-      newPlan = generateWorkoutPlan(newMaxReps, exerciseId); // Gera novo plano!
+      newPlan = generateWorkoutPlan(newMaxReps, exerciseId);
     }
     
     setWorkoutData({
@@ -277,53 +292,72 @@ const App = () => {
     
     setCurrentView('home');
   };
-  
-  // Nova função para marcar um dia do plano como concluído
-  const markPlanDayAsCompleted = (exerciseId, dayNumber) => {
-    const exerciseData = workoutData[exerciseId];
-    if (!exerciseData) return;
 
-    const todayPlan = exerciseData.plan.find(day => day.day === dayNumber);
-    if (!todayPlan) return;
-    
-    // Se for reavaliação, forçar o usuário a ir para a tela de avaliação
-    if (todayPlan.type === 'reavaliacao' && !todayPlan.completed) {
-        setSelectedExercise(exercises.find(ex => ex.id === exerciseId));
-        setExerciseGif(getExerciseGif(exerciseId));
-        setAssessmentMode(true);
-        setCurrentView('assessment');
-        return;
-    }
-    
-    // Apenas treinos podem ser marcados como concluídos (não descanso, não já concluído)
-    if (todayPlan.type !== 'treino' || todayPlan.completed) return; 
-    
-    // Ações para marcar um treino normal
-    if (todayPlan.type === 'treino' && !todayPlan.completed) {
-      // Cria uma entrada de histórico genérica (reps 0) apenas para marcar como feito
-      const today = new Date().toISOString().split('T')[0];
-      const newEntry = { 
-        date: today, 
-        exerciseId: exerciseId, 
-        reps: 0, 
-        level: exerciseData.currentLevel 
-      };
-      setHistory([...history, newEntry]);
-      
-      const updatedPlan = exerciseData.plan.map(day => 
-        day.day === dayNumber ? { ...day, completed: true } : day
-      );
-      
-      setWorkoutData({
-        ...workoutData,
-        [exerciseId]: {
-          ...exerciseData,
-          plan: updatedPlan
-        }
-      });
+  // Funções para o cronômetro
+  const startTimer = (day) => {
+    setCurrentDay(day);
+    if (day.countType === 'time') {
+      setTimer(0);
+      setIsRunning(true);
+    } else {
+      setRepsCount(0);
     }
   };
 
+  const stopTimer = () => {
+    setIsRunning(false);
+    if (currentDay) {
+      const result = currentDay.countType === 'time' ? timer : repsCount;
+      completeWorkoutDay(currentDay.day, result);
+    }
+  };
+
+  const completeWorkoutDay = (dayNumber, result) => {
+    const exerciseData = workoutData[selectedExercise?.id];
+    if (!exerciseData) return;
+
+    const updatedPlan = exerciseData.plan.map(day => 
+      day.day === dayNumber ? { ...day, completed: true, result } : day
+    );
+    
+    setWorkoutData({
+      ...workoutData,
+      [selectedExercise.id]: {
+        ...exerciseData,
+        plan: updatedPlan
+      }
+    });
+    
+    setCurrentDay(null);
+    setIsRunning(false);
+    
+    // Registrar no histórico
+    const today = new Date().toISOString().split('T')[0];
+    const newEntry = { 
+      date: today, 
+      exerciseId: selectedExercise.id, 
+      reps: result,
+      level: exerciseData.currentLevel,
+      type: 'workout'
+    };
+    setHistory([...history, newEntry]);
+  };
+
+  const handleDayClick = (day) => {
+    if (day.type === 'treino' && !day.completed) {
+      startTimer(day);
+    } else if (day.type === 'avaliacao' && !day.completed) {
+      setCurrentView('assessment');
+    } else if (day.type === 'descanso' && !day.completed) {
+      completeWorkoutDay(day.day, 0);
+    }
+  };
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   // --- SUB-COMPONENTES DE VISUALIZAÇÃO ---
 
@@ -342,8 +376,8 @@ const App = () => {
             <input
               type="text"
               className={`w-full p-4 rounded-xl ${darkMode ? 'bg-gray-700/70' : 'bg-gray-100'} border border-transparent focus:border-orange-500 outline-none transition`}
-              value={userData.name}
-              onChange={(e) => setUserData({...userData, name: e.target.value})}
+              value={formData.name}
+              onChange={(e) => handleInputChange('name', e.target.value)}
               placeholder="Seu nome completo"
             />
           </div>
@@ -354,8 +388,8 @@ const App = () => {
               <input
                 type="number"
                 className={`w-full p-4 rounded-xl ${darkMode ? 'bg-gray-700/70' : 'bg-gray-100'} text-center`}
-                value={userData.age}
-                onChange={(e) => setUserData({...userData, age: parseInt(e.target.value) || ''})}
+                value={formData.age}
+                onChange={(e) => handleInputChange('age', e.target.value)}
                 placeholder="25"
               />
             </div>
@@ -364,8 +398,8 @@ const App = () => {
               <input
                 type="number"
                 className={`w-full p-4 rounded-xl ${darkMode ? 'bg-gray-700/70' : 'bg-gray-100'} text-center`}
-                value={userData.weight}
-                onChange={(e) => setUserData({...userData, weight: parseFloat(e.target.value) || ''})}
+                value={formData.weight}
+                onChange={(e) => handleInputChange('weight', e.target.value)}
                 placeholder="70"
               />
             </div>
@@ -374,8 +408,8 @@ const App = () => {
               <input
                 type="number"
                 className={`w-full p-4 rounded-xl ${darkMode ? 'bg-gray-700/70' : 'bg-gray-100'} text-center`}
-                value={userData.height}
-                onChange={(e) => setUserData({...userData, height: parseFloat(e.target.value) || ''})}
+                value={formData.height}
+                onChange={(e) => handleInputChange('height', e.target.value)}
                 placeholder="175"
               />
             </div>
@@ -385,9 +419,9 @@ const App = () => {
             <label className={`block mb-3 text-sm font-semibold ${primaryColor}`}>Objetivo</label>
             <div className="grid grid-cols-2 gap-3">
               <button
-                onClick={() => setUserData({...userData, goal: 'muscle'})}
+                onClick={() => handleInputChange('goal', 'muscle')}
                 className={`p-4 rounded-xl border-2 transition-all shadow-md ${
-                  userData.goal === 'muscle'
+                  formData.goal === 'muscle'
                     ? 'border-blue-500 bg-blue-500/30 text-white'
                     : `border-gray-600 ${darkMode ? 'bg-gray-700/50' : 'bg-gray-100'} ${textSec}`
                 }`}
@@ -396,9 +430,9 @@ const App = () => {
                 <div className="font-bold">Ganhar Massa</div>
               </button>
               <button
-                onClick={() => setUserData({...userData, goal: 'weight_loss'})}
+                onClick={() => handleInputChange('goal', 'weight_loss')}
                 className={`p-4 rounded-xl border-2 transition-all shadow-md ${
-                  userData.goal === 'weight_loss'
+                  formData.goal === 'weight_loss'
                     ? 'border-orange-500 bg-orange-500/30 text-white'
                     : `border-gray-600 ${darkMode ? 'bg-gray-700/50' : 'bg-gray-100'} ${textSec}`
                 }`}
@@ -411,14 +445,18 @@ const App = () => {
 
           <button
             onClick={() => {
-              if (userData.name && userData.age && userData.weight && userData.height) {
-                setUserData({...userData, hasProfile: true});
+              if (formData.name && formData.age && formData.weight && formData.height) {
+                const newUserData = {
+                  ...formData,
+                  hasProfile: true
+                };
+                setUserData(newUserData);
                 setCalorieTracking({...calorieTracking, dailyGoal: calculateTMB, enabled: true});
                 setCurrentView('home');
               }
             }}
             className="w-full bg-gradient-to-r from-orange-600 to-red-600 text-white py-4 rounded-xl font-extrabold text-lg hover:shadow-lg transition-all transform hover:scale-[1.01]"
-            disabled={!userData.name || !userData.age || !userData.weight || !userData.height}
+            disabled={!formData.name || !formData.age || !formData.weight || !formData.height}
           >
             Começar Jornada
           </button>
@@ -428,9 +466,8 @@ const App = () => {
   );
 
   const HomeView = () => {
-    const today = new Date().getDay() + 1; // 1 (Domingo) a 7 (Sábado)
-    const todayExercisePlan = exercises.find(ex => workoutData[ex.id]?.plan.find(day => day.day === today && (day.type === 'treino' || day.type === 'reavaliacao') && !day.completed));
-    const todayExercise = todayExercisePlan ? exercises.find(ex => ex.id === todayExercisePlan.exerciseId || ex.id === todayExercisePlan.id) : null;
+    const today = new Date().getDay() + 1;
+    const todayExercise = exercises.find(ex => workoutData[ex.id]?.plan?.find(day => day.day === today && day.type === 'treino' && !day.completed));
 
     return (
       <div className={`min-h-screen ${bg} ${text}`}>
@@ -485,11 +522,11 @@ const App = () => {
           </div>
 
           {/* Card de Treino do Dia */}
-          {todayExercise && todayExercisePlan ? (
-            <div className={`${cardBg} rounded-3xl p-6 mb-6 shadow-xl border-l-4 ${todayExercisePlan.type === 'reavaliacao' ? 'border-red-500' : 'border-blue-500'}`}>
+          {todayExercise && workoutData[todayExercise.id] ? (
+            <div className={`${cardBg} rounded-3xl p-6 mb-6 shadow-xl border-l-4 border-blue-500`}>
               <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <Calendar className={`w-5 h-5 ${todayExercisePlan.type === 'reavaliacao' ? 'text-red-500' : 'text-blue-500'}`} />
-                {todayExercisePlan.type === 'reavaliacao' ? 'Dia de Reavaliação' : `Treino do Dia (${new Date().toLocaleDateString('pt-BR', {weekday: 'long'})})`}
+                <Calendar className="w-5 h-5 text-blue-500" />
+                Treino do Dia ({new Date().toLocaleDateString('pt-BR', {weekday: 'long'})})
               </h2>
               <button
                 onClick={() => { setSelectedExercise(todayExercise); setCurrentView('workout'); }}
@@ -497,11 +534,8 @@ const App = () => {
               >
                 <div>
                   <h3 className="font-bold text-lg">{todayExercise.name}</h3>
-                  <p className={`text-sm ${todayExercisePlan.type === 'reavaliacao' ? 'text-red-400' : 'text-blue-400'}`}>
-                    {todayExercisePlan.type === 'reavaliacao' 
-                        ? 'Teste de força máxima' 
-                        : `${todayExercisePlan.sets} séries de ${todayExercisePlan.reps} ${todayExercise.isTimeBased ? 'segundos' : 'repetições'}`
-                    }
+                  <p className="text-sm text-blue-400">
+                    {workoutData[todayExercise.id].plan.find(d => d.day === today).sets} séries de {workoutData[todayExercise.id].plan.find(d => d.day === today).countType === 'time' ? `${workoutData[todayExercise.id].plan.find(d => d.day === today).reps}s` : `${workoutData[todayExercise.id].plan.find(d => d.day === today).reps} repetições`}
                   </p>
                 </div>
                 <Play className="w-6 h-6 text-blue-500" />
@@ -513,7 +547,6 @@ const App = () => {
                <p className={textSec}>A recuperação é essencial para o crescimento muscular. Relaxe! 🧘</p>
              </div>
           )}
-
 
           {/* Seção de Exercícios */}
           <h2 className="text-xl font-bold mb-4">Explore os Exercícios</h2>
@@ -566,128 +599,6 @@ const App = () => {
       </div>
     );
   };
-  
-  // Novo Componente de Modal de Treino ao Vivo
-  const LiveWorkoutModal = ({ exercise, plan, onClose, onComplete }) => {
-    const isTimeBased = exercise.isTimeBased;
-    const [counter, setCounter] = useState(0);
-    const [isActive, setIsActive] = useState(false);
-    const [setsCompleted, setSetsCompleted] = useState(0);
-    const [message, setMessage] = useState('Inicie a primeira série!');
-    
-    // Timer: Contador para Reps ou Tempo
-    useEffect(() => {
-      let interval = null;
-      if (isActive) {
-        interval = setInterval(() => {
-          setCounter(c => c + 1);
-        }, 1000);
-      } else if (!isActive && counter !== 0) {
-        clearInterval(interval);
-      }
-      return () => clearInterval(interval);
-    }, [isActive]);
-
-    // Lógica do Treino
-    const startSet = () => {
-      setCounter(0);
-      setIsActive(true);
-      setMessage(`Série ${setsCompleted + 1} de ${plan.sets} em andamento...`);
-    };
-    
-    const endSet = () => {
-      setIsActive(false);
-      
-      const totalRepsOrTime = isTimeBased ? counter : counter; // No caso de Reps, o usuário dirá o total
-      
-      if (setsCompleted + 1 >= plan.sets) {
-          setMessage('Treino concluído! Registre o total de reps/tempo no campo abaixo.');
-          // Finaliza e prepara para registro
-          setSetsCompleted(setsCompleted + 1);
-          return;
-      }
-      
-      setSetsCompleted(setsCompleted + 1);
-      setMessage(`Série ${setsCompleted + 1} concluída! Descanse por ${plan.rest} segundos.`);
-      
-      // Reinicia automaticamente após o descanso (opcional)
-      setTimeout(() => {
-          setMessage(`Hora de começar a Série ${setsCompleted + 2}!`);
-      }, plan.rest * 1000);
-    };
-    
-    const formatTime = (totalSeconds) => {
-        const minutes = Math.floor(totalSeconds / 60);
-        const seconds = totalSeconds % 60;
-        return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    };
-
-    return (
-      <div className="fixed inset-0 z-50 bg-gray-900/95 flex flex-col items-center justify-center p-4">
-        <button onClick={onClose} className="absolute top-4 right-4 text-white p-3 rounded-full bg-gray-700/50 hover:bg-gray-700">
-            <X className="w-6 h-6" />
-        </button>
-        
-        <div className="text-center mb-8">
-            <h2 className="text-2xl font-extrabold text-orange-500 mb-2">{exercise.name} - Treino</h2>
-            <p className="text-lg text-white">{plan.sets} Séries de {isTimeBased ? `${plan.reps}s (sugestão)` : `${plan.reps} Reps (sugestão)`}</p>
-            <p className="text-sm text-gray-400 mt-1">Série: {setsCompleted}/{plan.sets}</p>
-        </div>
-        
-        {/* GIF de Animação */}
-        <div className="w-full max-w-sm h-60 mb-8 rounded-xl overflow-hidden shadow-2xl border-4 border-orange-500">
-            {exerciseGif ? (
-                <img 
-                    src={exerciseGif} 
-                    alt={exercise.name} 
-                    className="w-full h-full object-cover"
-                />
-            ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gray-800 text-gray-500">
-                    [attachment_0](attachment)
-                </div>
-            )}
-        </div>
-        
-        {/* Contador */}
-        <div className={`text-7xl font-mono font-extrabold mb-8 ${isActive ? 'text-green-400' : 'text-orange-500'}`}>
-            {isTimeBased ? formatTime(counter) : counter}
-            {!isTimeBased && <span className="text-2xl ml-2 text-gray-400">Reps Contadas</span>}
-            {isTimeBased && <span className="text-2xl ml-2 text-gray-400">Tempo</span>}
-        </div>
-        
-        {/* Mensagem e Botões */}
-        <div className="text-center w-full max-w-sm">
-            <p className="text-white mb-4 h-10 flex items-center justify-center font-semibold">{message}</p>
-            
-            <div className="flex gap-4">
-                <button
-                    onClick={() => isActive ? endSet() : startSet()}
-                    className={`flex-1 text-white py-4 rounded-xl font-extrabold text-lg transition-all shadow-lg 
-                        ${isActive 
-                            ? 'bg-red-600 hover:bg-red-700' 
-                            : 'bg-green-600 hover:bg-green-700'
-                        }`}
-                    disabled={setsCompleted >= plan.sets}
-                >
-                    {isActive ? (isTimeBased ? 'Parar Série' : 'Série Concluída') : 'Iniciar Série'}
-                </button>
-            </div>
-            
-            {setsCompleted >= plan.sets && (
-                <button 
-                    onClick={() => onComplete(isTimeBased ? counter : 0)} // Para tempo, passa o valor. Para reps, o usuário registra.
-                    className="w-full bg-blue-600 text-white py-3 mt-4 rounded-xl font-bold hover:bg-blue-700"
-                >
-                    Finalizar Treino
-                </button>
-            )}
-            
-        </div>
-      </div>
-    );
-  };
-
 
   const AssessmentView = () => {
     const [reps, setReps] = useState('');
@@ -719,18 +630,9 @@ const App = () => {
             <p className={`${textSec} mb-6 leading-relaxed`}>
               Faça o máximo de <span className="font-bold text-white">{selectedExercise?.name.toLowerCase()}</span> que conseguir, mantendo a forma correta, <span className="text-red-400">até a falha técnica</span>. Este número será a base do seu plano de treino.
             </p>
-            
-            {exerciseGif && (
-                <div className="mb-6 w-full h-40 rounded-xl overflow-hidden shadow-xl border-2 border-gray-700">
-                    <img src={exerciseGif} alt={`Animação de ${selectedExercise?.name}`} className="w-full h-full object-cover"/>
-                </div>
-            )}
-
 
             <div className="mb-8">
-              <label className={`block mb-3 font-extrabold text-lg ${primaryColor}`}>
-                {selectedExercise?.isTimeBased ? 'Tempo Máximo (segundos)' : 'Repetições Máximas'}
-              </label>
+              <label className={`block mb-3 font-extrabold text-lg ${primaryColor}`}>Quantas repetições você completou?</label>
               <input
                 type="number"
                 className={`w-full p-5 rounded-xl text-center text-3xl font-extrabold ${darkMode ? 'bg-gray-700' : 'bg-gray-100'} border-2 border-transparent focus:border-orange-500 outline-none transition`}
@@ -745,22 +647,14 @@ const App = () => {
               onClick={() => {
                 const repValue = parseInt(reps);
                 if (repValue > 0) {
-                  // Se o dia 7 foi concluído, faz a reavaliação
-                  const todayDay = new Date().getDay() + 1;
-                  const isReassessment = todayDay === 7 && workoutData[selectedExercise.id]?.plan.find(day => day.day === 7 && day.type === 'reavaliacao' && !day.completed);
-                  
-                  if (isReassessment) {
-                    logWorkoutCompletion(selectedExercise.id, repValue, true); // True para forçar a reavaliação/novo plano
-                  } else {
-                    completeAssessment(repValue); // Primeira avaliação
-                  }
-                  setCurrentView('workout');
+                  completeAssessment(repValue);
+                  setCurrentView('plan');
                 }
               }}
               className="w-full bg-gradient-to-r from-orange-600 to-red-600 text-white py-4 rounded-xl font-extrabold text-lg transition-all hover:shadow-2xl"
               disabled={!reps || parseInt(reps) <= 0}
             >
-              {workoutData[selectedExercise?.id] ? 'Atualizar Plano de Treino' : 'Gerar Plano de Treino'}
+              Gerar Plano de Treino
             </button>
           </div>
         </div>
@@ -771,44 +665,17 @@ const App = () => {
   const WorkoutView = () => {
     const exerciseData = workoutData[selectedExercise?.id];
     const [repsCompleted, setRepsCompleted] = useState('');
-    const [isTrainingLive, setIsTrainingLive] = useState(false); // Novo estado
 
     const today = new Date().getDay() + 1;
-    const todayPlan = exerciseData?.plan.find(day => day.day === today && (day.type === 'treino' || day.type === 'reavaliacao'));
-    
-    // Se for dia de reavaliação e não concluído, redireciona para a AssessmentView
-    if (todayPlan?.type === 'reavaliacao' && !todayPlan.completed) {
-        setAssessmentMode(true);
-        // Não muda o currentView aqui para evitar loop, o botão na Home já faz isso.
-    }
+    const todayPlan = exerciseData?.plan?.find(day => day.day === today && day.type === 'treino');
     
     if (!exerciseData) {
       return (
         <div className={`min-h-screen ${bg} ${text} p-6`}>
-          <p className="text-red-500">Erro: Dados do treino não encontrados. Faça uma avaliação inicial.</p>
-          <button onClick={() => setCurrentView('home')} className="mt-4 bg-orange-500 text-white p-3 rounded-lg">Voltar</button>
+          <p className="text-red-500">Erro: Dados do treino não encontrados.</p>
         </div>
       );
     }
-    
-    if (isTrainingLive && todayPlan.type === 'treino') {
-      return (
-        <LiveWorkoutModal 
-          exercise={selectedExercise} 
-          plan={todayPlan} 
-          onClose={() => setIsTrainingLive(false)}
-          onComplete={(finalCount) => {
-              setIsTrainingLive(false);
-              // Para exercícios baseados em repetições, o usuário registra o total. Para tempo, o contador é o total.
-              if (selectedExercise.isTimeBased) {
-                  setRepsCompleted(finalCount.toString()); 
-              }
-              setCurrentView('workout'); // Volta para a WorkoutView para o registro final
-          }}
-        />
-      );
-    }
-
 
     return (
       <div className={`min-h-screen ${bg} ${text} p-6 pb-24`}>
@@ -827,122 +694,85 @@ const App = () => {
 
         <h1 className="text-3xl font-extrabold text-center mb-2">{selectedExercise?.name}</h1>
         <p className={`text-center ${textSec} mb-8 font-medium`}>
-          Nível {exerciseData.currentLevel} • Recorde: {exerciseData.maxReps} {selectedExercise.isTimeBased ? 'segundos' : 'reps'}
+          Nível {exerciseData.currentLevel} • Recorde: {exerciseData.maxReps} reps
         </p>
 
-        {/* Treino de Hoje / Reavaliação */}
-        {todayPlan && !todayPlan.completed && todayPlan.type !== 'descanso' && (
-          <div className={`${cardBg} rounded-3xl p-6 mb-6 shadow-2xl border-b-4 ${todayPlan.type === 'reavaliacao' ? 'border-red-500' : 'border-blue-500'}`}>
-            <h3 className="font-bold text-xl mb-4 text-blue-400">
-                {todayPlan.type === 'reavaliacao' ? 'REAVALIAÇÃO DO DIA' : 'Treino Sugerido para Hoje'}
-            </h3>
-            
-            {todayPlan.type === 'treino' && (
-                <div className="flex justify-around text-center mb-6">
-                  <div>
-                    <div className="text-3xl font-extrabold text-orange-500">{todayPlan.sets}</div>
-                    <div className={textSec}>Séries</div>
-                  </div>
-                  <div>
-                    <div className="text-3xl font-extrabold text-orange-500">{todayPlan.reps}</div>
-                    <div className={textSec}>{selectedExercise.isTimeBased ? 'Segs (por série)' : 'Reps (por série)'}</div>
-                  </div>
-                  <div>
-                    <div className="text-3xl font-extrabold text-orange-500">{todayPlan.rest}s</div>
-                    <div className={textSec}>Descanso</div>
-                  </div>
+        {/* Treino de Hoje */}
+        {todayPlan && !todayPlan.completed && (
+          <div className={`${cardBg} rounded-3xl p-6 mb-6 shadow-2xl border-b-4 border-blue-500`}>
+            <h3 className="font-bold text-xl mb-4 text-blue-400">Treino Sugerido para Hoje</h3>
+            <div className="flex justify-around text-center mb-6">
+              <div>
+                <div className="text-3xl font-extrabold text-orange-500">{todayPlan.sets}</div>
+                <div className={textSec}>Séries</div>
+              </div>
+              <div>
+                <div className="text-3xl font-extrabold text-orange-500">
+                  {todayPlan.countType === 'time' ? `${todayPlan.reps}s` : todayPlan.reps}
                 </div>
-            )}
-            
-            {todayPlan.type === 'reavaliacao' && (
-                 <p className="text-center text-red-400 font-semibold text-lg mb-6">
-                     Hoje é dia de testar seu MÁXIMO e gerar um novo plano!
-                 </p>
-            )}
+                <div className={textSec}>{todayPlan.countType === 'time' ? 'Tempo' : 'Repetições'}</div>
+              </div>
+              <div>
+                <div className="text-3xl font-extrabold text-orange-500">{todayPlan.rest}s</div>
+                <div className={textSec}>Descanso</div>
+              </div>
+            </div>
 
-            {/* Botão de Treino Interativo (apenas para treinos) */}
-            {todayPlan.type === 'treino' && (
-                <button
-                  onClick={() => setIsTrainingLive(true)} 
-                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-4 mt-5 rounded-xl font-extrabold text-lg transition-all hover:shadow-2xl"
-                >
-                  <div className="flex items-center justify-center gap-2">
-                    <Play className="w-5 h-5" />
-                    Iniciar Treino Interativo
-                  </div>
-                </button>
-            )}
-            
-            {/* Campo de Registro Manual */}
-            <div className="pt-4 border-t border-gray-700 mt-5">
+            <div className="pt-4 border-t border-gray-700">
               <label className={`block mb-3 font-extrabold text-lg ${primaryColor}`}>
-                {todayPlan.type === 'reavaliacao' 
-                    ? `Total de ${selectedExercise.isTimeBased ? 'Segundos' : 'Repetições'} (Reavaliação)`
-                    : `Total de ${selectedExercise.isTimeBased ? 'Segundos' : 'Repetições'} (Treino)`
-                }
+                {todayPlan.countType === 'time' ? 'Tempo Concluído (segundos)' : 'Reps Concluídas (Total)'}
               </label>
               <input
                 type="number"
                 className={`w-full p-4 rounded-xl text-center text-2xl font-extrabold ${darkMode ? 'bg-gray-700' : 'bg-gray-100'} border-2 border-transparent focus:border-orange-500 outline-none transition`}
                 value={repsCompleted}
                 onChange={(e) => setRepsCompleted(e.target.value)}
-                placeholder={selectedExercise.isTimeBased ? 'Ex: 120 (Segs)' : 'Ex: 50 (Reps)'}
+                placeholder={todayPlan.countType === 'time' ? "Ex: 45" : "Ex: 50"}
                 min="1"
               />
             </div>
 
             <button
-              onClick={() => {
-                const reps = parseInt(repsCompleted);
-                if (reps > 0) {
-                   logWorkoutCompletion(selectedExercise.id, reps, todayPlan.type === 'reavaliacao');
-                }
-              }}
-              className="w-full bg-gradient-to-r from-orange-600 to-red-600 text-white py-4 mt-5 rounded-xl font-extrabold text-lg transition-all hover:shadow-2xl"
+              onClick={() => logWorkoutCompletion(selectedExercise.id, parseInt(repsCompleted))}
+              className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-4 mt-5 rounded-xl font-extrabold text-lg transition-all hover:shadow-2xl"
               disabled={!repsCompleted || parseInt(repsCompleted) <= 0}
             >
               <div className="flex items-center justify-center gap-2">
                 <Award className="w-5 h-5" />
-                {todayPlan.type === 'reavaliacao' ? 'Gerar Novo Plano' : 'Marcar Como Concluído'}
+                Marcar Como Concluído
               </div>
             </button>
-            
           </div>
         )}
         
         {todayPlan && todayPlan.completed && (
           <div className={`${cardBg} rounded-3xl p-6 mb-6 shadow-2xl text-center border-b-4 border-green-500`}>
-            <h3 className="font-extrabold text-xl text-green-500 mb-2">{todayPlan.type === 'reavaliacao' ? 'Reavaliação Concluída!' : 'Treino de Hoje Concluído!'}</h3>
-            <p className={textSec}>Retorne amanhã ou descanse.</p>
+            <h3 className="font-extrabold text-xl text-green-500 mb-2">Treino de Hoje Concluído!</h3>
+            <p className={textSec}>Sua dedicação está valendo a pena. Retorne amanhã ou descanse.</p>
           </div>
         )}
 
-        <h3 className="font-bold text-xl mb-4 text-white">Plano Semanal</h3>
+        <button
+          onClick={() => setCurrentView('plan')}
+          className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-4 mt-6 rounded-xl font-extrabold text-lg transition-all hover:shadow-2xl"
+        >
+          <div className="flex items-center justify-center gap-2">
+            <Calendar className="w-5 h-5" />
+            Ver Plano Completo
+          </div>
+        </button>
+
+        <h3 className="font-bold text-xl mb-4 text-white mt-8">Próximos Dias</h3>
         
         <div className="space-y-3">
-          {exerciseData.plan.map((day, index) => (
-            <button
+          {exerciseData.plan?.slice(0, 7).map((day, index) => (
+            <div
               key={index}
-              onClick={() => {
-                 if (day.type !== 'descanso') {
-                    markPlanDayAsCompleted(selectedExercise.id, day.day);
-                 }
-              }}
-              className={`w-full text-left ${cardBg} rounded-xl p-4 flex items-center justify-between shadow-md transition-all 
-                  ${day.type === 'descanso' 
-                      ? 'opacity-70' 
-                      : day.completed 
-                          ? 'border-l-4 border-green-500 bg-green-500/10' 
-                          : 'hover:border-l-4 hover:border-orange-500'
-                  }`}
-              disabled={day.type === 'descanso' || day.completed || (day.type === 'reavaliacao' && !assessmentMode)}
+              className={`${cardBg} rounded-xl p-4 flex items-center justify-between shadow-md ${day.type === 'descanso' ? 'opacity-70' : ''}`}
             >
               <div className="flex items-center gap-3">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    day.type === 'treino' && !day.completed ? 'bg-blue-500/20 text-blue-500' 
-                    : day.type === 'reavaliacao' && !day.completed ? 'bg-red-500/20 text-red-500'
-                    : day.completed ? 'bg-green-500/20 text-green-500' 
-                    : 'bg-gray-600/20 text-gray-500'
+                    day.type === 'treino' ? 'bg-orange-500/20 text-orange-500' : 'bg-gray-600/20 text-gray-500'
                 } font-bold text-sm`}>
                     {day.day}
                 </div>
@@ -950,18 +780,162 @@ const App = () => {
                   <div className="font-bold">Dia {day.day}</div>
                   {day.type === 'treino' ? (
                     <div className={`text-sm ${textSec}`}>
-                      {day.sets} séries × {day.reps} {selectedExercise.isTimeBased ? 'segs' : 'reps'}
+                      {day.sets} séries × {day.countType === 'time' ? `${day.reps}s` : `${day.reps} reps`}
                     </div>
-                  ) : day.type === 'reavaliacao' ? (
-                    <div className={`text-sm text-red-400 font-semibold`}>REAVALIAÇÃO! 📝</div>
                   ) : (
                     <div className={`text-sm ${textSec}`}>Descanso Ativo</div>
                   )}
                 </div>
               </div>
-              {day.type === 'treino' && day.completed && <span className="text-green-500 font-bold">FEITO ✅</span>}
-              {day.type === 'reavaliacao' && day.completed && <span className="text-green-500 font-bold">REAVALIADO ✅</span>}
+              {day.type === 'treino' && day.completed && <span className="text-green-500 font-bold">FEITO</span>}
               {day.type === 'descanso' && <div className="text-xl">😴</div>}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const WorkoutPlanView = () => {
+    const exerciseData = workoutData[selectedExercise?.id];
+
+    if (!exerciseData) {
+      return (
+        <div className={`min-h-screen ${bg} ${text} p-6`}>
+          <p className="text-red-500">Erro: Dados do treino não encontrados.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className={`min-h-screen ${bg} ${text} p-6 pb-24`}>
+        <div className="flex justify-between items-center mb-6">
+          <button
+            onClick={() => setCurrentView('workout')}
+            className={`${primaryColor} text-lg font-semibold`}
+          >
+            ← Voltar
+          </button>
+        </div>
+
+        <h1 className="text-3xl font-extrabold text-center mb-2">Plano de Treino</h1>
+        <p className={`text-center ${textSec} mb-8`}>{selectedExercise?.name}</p>
+
+        {/* Modal do Cronômetro */}
+        {currentDay && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+            <div className={`${cardBg} rounded-3xl p-6 w-full max-w-md`}>
+              <h3 className="text-xl font-bold mb-4 text-center">Executando: {selectedExercise?.name}</h3>
+              
+              {/* Animação GIF */}
+              <div className="w-32 h-32 mx-auto mb-6 bg-gray-700 rounded-xl flex items-center justify-center overflow-hidden">
+                <img 
+                  src={`/gifs/${selectedExercise?.id}.gif`} 
+                  alt={selectedExercise?.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+                <div className="text-4xl hidden">
+                  {selectedExercise?.icon}
+                </div>
+              </div>
+              
+              {currentDay.countType === 'time' ? (
+                <div className="text-center mb-6">
+                  <div className="text-5xl font-bold text-orange-500 mb-2">{formatTime(timer)}</div>
+                  <p className={textSec}>Tempo decorrido</p>
+                </div>
+              ) : (
+                <div className="text-center mb-6">
+                  <div className="text-5xl font-bold text-orange-500 mb-2">{repsCount}</div>
+                  <p className={textSec}>Repetições</p>
+                  <div className="flex justify-center gap-3 mt-4">
+                    <button 
+                      onClick={() => setRepsCount(prev => prev + 1)}
+                      className="bg-green-500 text-white px-6 py-3 rounded-xl font-bold"
+                    >
+                      +1 Rep
+                    </button>
+                    <button 
+                      onClick={() => setRepsCount(prev => Math.max(0, prev - 1))}
+                      className="bg-red-500 text-white px-6 py-3 rounded-xl font-bold"
+                    >
+                      -1 Rep
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button 
+                  onClick={stopTimer}
+                  className="flex-1 bg-red-500 text-white py-3 rounded-xl font-bold"
+                >
+                  Finalizar
+                </button>
+                <button 
+                  onClick={() => {
+                    setIsRunning(false);
+                    setCurrentDay(null);
+                  }}
+                  className="flex-1 bg-gray-500 text-white py-3 rounded-xl font-bold"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Grid de Dias */}
+        <div className="grid grid-cols-2 gap-4">
+          {exerciseData.plan?.map((day) => (
+            <button
+              key={day.day}
+              onClick={() => handleDayClick(day)}
+              className={`${cardBg} rounded-2xl p-4 text-center shadow-md transition-transform hover:scale-105 ${
+                day.completed 
+                  ? 'border-b-4 border-green-500' 
+                  : day.type === 'avaliacao'
+                  ? 'border-b-4 border-yellow-500'
+                  : day.type === 'descanso'
+                  ? 'border-b-4 border-blue-500'
+                  : 'border-b-4 border-orange-500'
+              }`}
+            >
+              <div className="text-2xl font-bold mb-2">Dia {day.day}</div>
+              
+              {day.type === 'treino' && (
+                <>
+                  <div className="text-lg font-semibold text-orange-500">
+                    {day.sets} × {day.countType === 'time' ? `${day.reps}s` : day.reps}
+                  </div>
+                  <div className={`text-sm ${textSec}`}>
+                    {day.countType === 'time' ? 'Tempo' : 'Repetições'}
+                  </div>
+                </>
+              )}
+              
+              {day.type === 'descanso' && (
+                <>
+                  <div className="text-3xl">😴</div>
+                  <div className={`text-sm ${textSec}`}>Descanso</div>
+                </>
+              )}
+              
+              {day.type === 'avaliacao' && (
+                <>
+                  <div className="text-3xl">📊</div>
+                  <div className={`text-sm ${textSec}`}>Avaliação</div>
+                </>
+              )}
+              
+              {day.completed && (
+                <div className="text-green-500 text-sm font-bold mt-2">✓ CONCLUÍDO</div>
+              )}
             </button>
           ))}
         </div>
@@ -969,9 +943,7 @@ const App = () => {
     );
   };
 
-
   const CaloriesView = () => {
-    // ... (Mantém a implementação original do CaloriesView)
     const [mealName, setMealName] = useState('');
     const [mealCalories, setMealCalories] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
@@ -1061,7 +1033,7 @@ const App = () => {
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
-                  setMealName(e.target.value); 
+                  setMealName(e.target.value);
                   setIsSearching(true);
                 }}
                 placeholder="Buscar ou digitar nome do alimento (Ex: Frango)"
@@ -1092,7 +1064,6 @@ const App = () => {
               {filteredFood.length === 0 && <div className="p-3 text-center text-sm text-gray-500">Nenhum alimento encontrado. Digite manualmente abaixo.</div>}
             </div>
           )}
-
 
           <div className="flex gap-3">
             <input
@@ -1140,7 +1111,6 @@ const App = () => {
   };
   
   const StatsView = () => {
-    // ... (Mantém a implementação original do StatsView)
     const imc = calculateBMI(userData.weight, userData.height);
 
     const getIMCStatus = (bmi) => {
@@ -1155,13 +1125,12 @@ const App = () => {
     
     const totalWorkouts = history.length;
     
-    // Contagem de treinos por exercício
     const workoutCounts = history.reduce((acc, curr) => {
         acc[curr.exerciseId] = (acc[curr.exerciseId] || 0) + 1;
         return acc;
     }, {});
     
-    const topExerciseId = Object.keys(workoutCounts).reduce((a, b) => (workoutCounts[a] || 0) > (workoutCounts[b] || 0) ? a : b, null);
+    const topExerciseId = Object.keys(workoutCounts).reduce((a, b) => workoutCounts[a] > workoutCounts[b] ? a : b, null);
     const topExercise = exercises.find(ex => ex.id === topExerciseId);
     
     return (
@@ -1230,7 +1199,7 @@ const App = () => {
                     <div className="font-semibold">{exercise?.name || 'Treino'}</div>
                     <div className={`text-xs ${textSec}`}>{new Date(entry.date).toLocaleDateString('pt-BR')} • Nível {entry.level}</div>
                   </div>
-                  <div className={`text-blue-500 font-extrabold text-lg`}>{entry.reps} {exercise?.isTimeBased ? 'Segs' : 'Reps'}</div>
+                  <div className={`text-blue-500 font-extrabold text-lg`}>{entry.reps} {entry.type === 'workout' ? (exercise?.id === 'prancha' ? 'seg' : 'Reps') : 'Reps'}</div>
                 </div>
               );
             })
@@ -1241,7 +1210,6 @@ const App = () => {
   };
   
   const SettingsModal = () => (
-    // ... (Mantém a implementação original do SettingsModal)
     <div className="fixed inset-0 z-50 bg-gray-900/90 flex justify-end">
       <div className={`w-full max-w-sm ${cardBg} h-full p-6 shadow-2xl overflow-y-auto`}>
         <div className="flex justify-between items-center mb-8">
@@ -1313,7 +1281,6 @@ const App = () => {
   );
 
   const BottomNav = () => (
-    // ... (Mantém a implementação original do BottomNav)
     <div className={`fixed bottom-0 left-0 right-0 ${cardBg} border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'} p-3 shadow-2xl z-40`}>
       <div className="flex justify-around max-w-md mx-auto">
         <button
@@ -1322,6 +1289,13 @@ const App = () => {
         >
           <Activity className="w-6 h-6" />
           <span className="text-xs font-semibold">Treinos</span>
+        </button>
+        <button
+          onClick={() => setCurrentView('plan')}
+          className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors ${currentView === 'plan' ? 'text-green-500 bg-green-500/20' : textSec}`}
+        >
+          <Calendar className="w-6 h-6" />
+          <span className="text-xs font-semibold">Plano</span>
         </button>
         <button
           onClick={() => setCurrentView('stats')}
@@ -1357,6 +1331,7 @@ const App = () => {
       {currentView === 'home' && <HomeView />}
       {currentView === 'assessment' && <AssessmentView />}
       {currentView === 'workout' && <WorkoutView />}
+      {currentView === 'plan' && <WorkoutPlanView />}
       {currentView === 'calories' && <CaloriesView />}
       {currentView === 'stats' && <StatsView />}
     </div>
