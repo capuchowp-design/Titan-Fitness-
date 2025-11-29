@@ -99,7 +99,7 @@ const App = () => {
     { name: 'Mel', calories: 304, category: 'Outros', unit: '100g', emoji: '🍯' },
     { name: 'Chocolate ao leite', calories: 535, category: 'Outros', unit: '100g', emoji: '🍫' },
     { name: 'Pipoca sem manteiga', calories: 387, category: 'Outros', unit: '100g', emoji: '🍿' }
-  ]);
+  ];
 
   const [workoutData, setWorkoutData] = useState({});
   const [assessmentMode, setAssessmentMode] = useState(false);
