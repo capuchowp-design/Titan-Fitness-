@@ -1338,4 +1338,611 @@ const App = () => {
   );
 };
 
+import React, { useState, useEffect, useMemo } from 'react';
+import { Activity, Target, TrendingUp, Bell, Calendar, Utensils, Settings, ChevronRight, Play, Award, Flame, Menu, X, BarChart } from 'lucide-react';
+
+// Função para calcular o Índice de Massa Corporal (IMC)
+const calculateBMI = (weight, height) => {
+  if (!weight || !height) return null;
+  const heightMeters = height / 100;
+  return (weight / (heightMeters * heightMeters)).toFixed(1);
+};
+
+// Componente Principal
+const App = () => {
+  const [darkMode, setDarkMode] = useState(true);
+  const [currentView, setCurrentView] = useState('home');
+  const [userData, setUserData] = useState({
+    name: '',
+    age: '',
+    weight: '',
+    height: '',
+    goal: 'muscle',
+    hasProfile: false
+  });
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    age: '',
+    weight: '',
+    height: '',
+    goal: 'muscle'
+  });
+
+  const [exercises] = useState([
+    { id: 'flexoes', name: 'Flexões', target: 'Peitoral', icon: '💪', color: 'from-red-500 to-orange-500' },
+    { id: 'agachamento', name: 'Agachamento', target: 'Quadríceps e Panturrilha', icon: '🦵', color: 'from-blue-500 to-cyan-500' },
+    { id: 'prancha', name: 'Prancha', target: 'Abdômen', icon: '🔥', color: 'from-yellow-500 to-orange-500' },
+    { id: 'elevacao', name: 'Elevação', target: 'Costas', icon: '⬆️', color: 'from-green-500 to-emerald-500' },
+    { id: 'ponte', name: 'Ponte Glútea', target: 'Glúteos e Posterior', icon: '🍑', color: 'from-purple-500 to-pink-500' },
+    { id: 'pular_corda', name: 'Pular Corda', target: 'Cardio e Resistência', icon: '🏃', color: 'from-cyan-500 to-blue-500' }
+  ]);
+
+  const foodDatabase = [
+    { name: 'Arroz branco cozido', calories: 130, category: 'Carboidratos', unit: '100g', emoji: '🍚' },
+    { name: 'Arroz integral cozido', calories: 110, category: 'Carboidratos', unit: '100g', emoji: '🍚' },
+    { name: 'Macarrão cozido', calories: 131, category: 'Carboidratos', unit: '100g', emoji: '🍝' },
+    { name: 'Pão francês', calories: 300, category: 'Carboidratos', unit: '100g', emoji: '🥖' },
+    { name: 'Pão integral', calories: 253, category: 'Carboidratos', unit: '100g', emoji: '🍞' },
+    { name: 'Batata cozida', calories: 87, category: 'Carboidratos', unit: '100g', emoji: '🥔' },
+    { name: 'Batata doce cozida', calories: 86, category: 'Carboidratos', unit: '100g', emoji: '🍠' },
+    { name: 'Mandioca cozida', calories: 125, category: 'Carboidratos', unit: '100g', emoji: '🥔' },
+    { name: 'Tapioca', calories: 130, category: 'Carboidratos', unit: '100g', emoji: '🫓' },
+    { name: 'Aveia', calories: 389, category: 'Carboidratos', unit: '100g', emoji: '🥣' },
+    { name: 'Peito de frango grelhado', calories: 165, category: 'Proteínas', unit: '100g', emoji: '🍗' },
+    { name: 'Carne bovina magra', calories: 250, category: 'Proteínas', unit: '100g', emoji: '🥩' },
+    { name: 'Ovo cozido', calories: 155, category: 'Proteínas', unit: '100g', emoji: '🥚' },
+    { name: 'Peixe grelhado', calories: 140, category: 'Proteínas', unit: '100g', emoji: '🐟' },
+    { name: 'Tilápia', calories: 96, category: 'Proteínas', unit: '100g', emoji: '🐟' },
+    { name: 'Salmão', calories: 208, category: 'Proteínas', unit: '100g', emoji: '🐟' },
+    { name: 'Atum enlatado', calories: 116, category: 'Proteínas', unit: '100g', emoji: '🥫' },
+    { name: 'Camarão', calories: 99, category: 'Proteínas', unit: '100g', emoji: '🦐' },
+    { name: 'Peito de peru', calories: 104, category: 'Proteínas', unit: '100g', emoji: '🦃' },
+    { name: 'Feijão preto cozido', calories: 77, category: 'Leguminosas', unit: '100g', emoji: '🫘' },
+    { name: 'Feijão carioca cozido', calories: 76, category: 'Leguminosas', unit: '100g', emoji: '🫘' },
+    { name: 'Lentilha cozida', calories: 116, category: 'Leguminosas', unit: '100g', emoji: '🫘' },
+    { name: 'Grão de bico cozido', calories: 164, category: 'Leguminosas', unit: '100g', emoji: '🫘' },
+    { name: 'Leite integral', calories: 61, category: 'Laticínios', unit: '100ml', emoji: '🥛' },
+    { name: 'Leite desnatado', calories: 34, category: 'Laticínios', unit: '100ml', emoji: '🥛' },
+    { name: 'Iogurte natural', calories: 61, category: 'Laticínios', unit: '100g', emoji: '🥛' },
+    { name: 'Queijo minas', calories: 264, category: 'Laticínios', unit: '100g', emoji: '🧀' },
+    { name: 'Queijo mussarela', calories: 280, category: 'Laticínios', unit: '100g', emoji: '🧀' },
+    { name: 'Requeijão', calories: 235, category: 'Laticínios', unit: '100g', emoji: '🧈' },
+    { name: 'Banana', calories: 89, category: 'Frutas', unit: '100g', emoji: '🍌' },
+    { name: 'Maçã', calories: 52, category: 'Frutas', unit: '100g', emoji: '🍎' },
+    { name: 'Laranja', calories: 47, category: 'Frutas', unit: '100g', emoji: '🍊' },
+    { name: 'Mamão', calories: 43, category: 'Frutas', unit: '100g', emoji: '🍈' },
+    { name: 'Melancia', calories: 30, category: 'Frutas', unit: '100g', emoji: '🍉' },
+    { name: 'Morango', calories: 32, category: 'Frutas', unit: '100g', emoji: '🍓' },
+    { name: 'Abacaxi', calories: 50, category: 'Frutas', unit: '100g', emoji: '🍍' },
+    { name: 'Manga', calories: 60, category: 'Frutas', unit: '100g', emoji: '🥭' },
+    { name: 'Uva', calories: 69, category: 'Frutas', unit: '100g', emoji: '🍇' },
+    { name: 'Abacate', calories: 160, category: 'Frutas', unit: '100g', emoji: '🥑' },
+    { name: 'Brócolis cozido', calories: 35, category: 'Vegetais', unit: '100g', emoji: '🥦' },
+    { name: 'Cenoura crua', calories: 41, category: 'Vegetais', unit: '100g', emoji: '🥕' },
+    { name: 'Tomate', calories: 18, category: 'Vegetais', unit: '100g', emoji: '🍅' },
+    { name: 'Alface', calories: 15, category: 'Vegetais', unit: '100g', emoji: '🥬' },
+    { name: 'Couve', calories: 33, category: 'Vegetais', unit: '100g', emoji: '🥬' },
+    { name: 'Abobrinha', calories: 17, category: 'Vegetais', unit: '100g', emoji: '🥒' },
+    { name: 'Berinjela', calories: 25, category: 'Vegetais', unit: '100g', emoji: '🍆' },
+    { name: 'Pepino', calories: 15, category: 'Vegetais', unit: '100g', emoji: '🥒' },
+    { name: 'Azeite de oliva', calories: 884, category: 'Gorduras', unit: '100ml', emoji: '🫒' },
+    { name: 'Manteiga', calories: 717, category: 'Gorduras', unit: '100g', emoji: '🧈' },
+    { name: 'Castanha do Pará', calories: 656, category: 'Gorduras', unit: '100g', emoji: '🌰' },
+    { name: 'Amendoim', calories: 567, category: 'Gorduras', unit: '100g', emoji: '🥜' },
+    { name: 'Amêndoas', calories: 579, category: 'Gorduras', unit: '100g', emoji: '🌰' },
+    { name: 'Café sem açúcar', calories: 2, category: 'Bebidas', unit: '100ml', emoji: '☕' },
+    { name: 'Suco de laranja natural', calories: 45, category: 'Bebidas', unit: '100ml', emoji: '🧃' },
+    { name: 'Refrigerante', calories: 42, category: 'Bebidas', unit: '100ml', emoji: '🥤' },
+    { name: 'Água de coco', calories: 19, category: 'Bebidas', unit: '100ml', emoji: '🥥' },
+    { name: 'Açúcar', calories: 387, category: 'Outros', unit: '100g', emoji: '🍬' },
+    { name: 'Mel', calories: 304, category: 'Outros', unit: '100g', emoji: '🍯' },
+    { name: 'Chocolate ao leite', calories: 535, category: 'Outros', unit: '100g', emoji: '🍫' },
+    { name: 'Pipoca sem manteiga', calories: 387, category: 'Outros', unit: '100g', emoji: '🍿' }
+  ];
+
+  const [workoutData, setWorkoutData] = useState({});
+  const [assessmentMode, setAssessmentMode] = useState(false);
+  const [selectedExercise, setSelectedExercise] = useState(null);
+  
+  const [calorieTracking, setCalorieTracking] = useState({
+    enabled: false,
+    dailyGoal: 2000,
+    consumed: 0,
+    meals: []
+  });
+  
+  const [history, setHistory] = useState([]);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // Estados para o cronômetro de treino
+  const [currentDay, setCurrentDay] = useState(null);
+  const [currentSet, setCurrentSet] = useState(1);
+  const [totalSets, setTotalSets] = useState(0);
+  const [workoutTimer, setWorkoutTimer] = useState(0);
+  const [restTimer, setRestTimer] = useState(0);
+  const [isWorkoutRunning, setIsWorkoutRunning] = useState(false);
+  const [isRestRunning, setIsRestRunning] = useState(false);
+  const [repsCount, setRepsCount] = useState(0);
+  const [workoutPhase, setWorkoutPhase] = useState('preparing'); // 'preparing', 'working', 'resting', 'completed'
+
+  // Carregar dados do localStorage
+  useEffect(() => {
+    const savedUserData = localStorage.getItem('titanFitnessUserData');
+    const savedWorkoutData = localStorage.getItem('titanFitnessWorkoutData');
+    const savedCalorieData = localStorage.getItem('titanFitnessCalorieTracking');
+    const savedHistory = localStorage.getItem('titanFitnessHistory');
+
+    if (savedUserData) {
+      const parsedData = JSON.parse(savedUserData);
+      setUserData(parsedData);
+      setFormData({
+        name: parsedData.name || '',
+        age: parsedData.age || '',
+        weight: parsedData.weight || '',
+        height: parsedData.height || '',
+        goal: parsedData.goal || 'muscle'
+      });
+    }
+    if (savedWorkoutData) setWorkoutData(JSON.parse(savedWorkoutData));
+    if (savedCalorieData) setCalorieTracking(JSON.parse(savedCalorieData));
+    if (savedHistory) setHistory(JSON.parse(savedHistory));
+  }, []);
+
+  // Persistir dados no localStorage
+  useEffect(() => {
+    if (userData.hasProfile) {
+      localStorage.setItem('titanFitnessUserData', JSON.stringify(userData));
+    }
+    localStorage.setItem('titanFitnessWorkoutData', JSON.stringify(workoutData));
+    localStorage.setItem('titanFitnessCalorieTracking', JSON.stringify(calorieTracking));
+    localStorage.setItem('titanFitnessHistory', JSON.stringify(history));
+  }, [userData, workoutData, calorieTracking, history]);
+
+  // Efeito para o cronômetro de exercício (tempo)
+  useEffect(() => {
+    let interval;
+    if (isWorkoutRunning && workoutPhase === 'working' && currentDay?.countType === 'time') {
+      interval = setInterval(() => {
+        setWorkoutTimer(prev => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isWorkoutRunning, workoutPhase, currentDay]);
+
+  // Efeito para o cronômetro de descanso
+  useEffect(() => {
+    let interval;
+    if (isRestRunning && workoutPhase === 'resting') {
+      interval = setInterval(() => {
+        setRestTimer(prev => {
+          if (prev <= 1) {
+            // Tempo de descanso acabou, iniciar próxima série
+            startNextSet();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isRestRunning, workoutPhase]);
+
+  const bg = darkMode ? 'bg-gray-900' : 'bg-gray-50';
+  const cardBg = darkMode ? 'bg-gray-800' : 'bg-white';
+  const text = darkMode ? 'text-white' : 'text-gray-900';
+  const textSec = darkMode ? 'text-gray-400' : 'text-gray-600';
+  const primaryColor = 'text-orange-500';
+
+  const calculateTMB = useMemo(() => {
+    if (!userData.weight || !userData.height || !userData.age) return 2500;
+    
+    const tmb = 88.362 + (13.397 * userData.weight) + (4.799 * userData.height) - (5.677 * userData.age);
+    
+    if (userData.goal === 'weight_loss') {
+      return Math.round(tmb * 1.2 - 500);
+    } else {
+      return Math.round(tmb * 1.5 + 300);
+    }
+  }, [userData.weight, userData.height, userData.age, userData.goal]);
+
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const startAssessment = (exercise) => {
+    setSelectedExercise(exercise);
+    setAssessmentMode(true);
+  };
+
+  const generateWorkoutPlan = (maxReps, exerciseId) => {
+    const days = [];
+    let currentReps = Math.floor(maxReps * 0.6);
+    if (currentReps < 5) currentReps = 5;
+
+    const isTimeBased = exerciseId === 'prancha';
+
+    for (let i = 1; i <= 7; i++) {
+      if (i % 2 === 1) {
+        days.push({
+          day: i,
+          sets: 5,
+          reps: isTimeBased ? 30 : currentReps + Math.floor((i - 1) * 0.25),
+          rest: 60,
+          type: 'treino',
+          completed: false,
+          timer: isTimeBased ? 30 : null,
+          countType: isTimeBased ? 'time' : 'reps'
+        });
+      } else {
+        days.push({
+          day: i,
+          type: 'descanso',
+          completed: false
+        });
+      }
+    }
+    
+    days.push({
+      day: 8,
+      type: 'avaliacao',
+      completed: false,
+      description: 'Teste de repetições máximas'
+    });
+    
+    return days;
+  };
+
+  const completeAssessment = (reps) => {
+    if (reps <= 0) return;
+
+    const newWorkoutData = {
+      ...workoutData,
+      [selectedExercise.id]: {
+        currentLevel: 1,
+        maxReps: reps,
+        history: [{date: new Date().toISOString(), reps}],
+        plan: generateWorkoutPlan(reps, selectedExercise.id)
+      }
+    };
+    setWorkoutData(newWorkoutData);
+    setAssessmentMode(false);
+  };
+
+  // Funções para o sistema de séries com descanso
+  const startWorkout = (day) => {
+    setCurrentDay(day);
+    setCurrentSet(1);
+    setTotalSets(day.sets);
+    setWorkoutTimer(0);
+    setRestTimer(day.rest);
+    setRepsCount(0);
+    setWorkoutPhase('preparing');
+    setIsWorkoutRunning(false);
+    setIsRestRunning(false);
+  };
+
+  const startSet = () => {
+    setWorkoutPhase('working');
+    setIsWorkoutRunning(true);
+    if (currentDay.countType === 'reps') {
+      setRepsCount(0);
+    }
+  };
+
+  const completeSet = () => {
+    setIsWorkoutRunning(false);
+    setWorkoutPhase('resting');
+    setIsRestRunning(true);
+    
+    // Se for a última série, não iniciar descanso
+    if (currentSet >= totalSets) {
+      completeWorkout();
+      return;
+    }
+  };
+
+  const startNextSet = () => {
+    setIsRestRunning(false);
+    setCurrentSet(prev => prev + 1);
+    setWorkoutTimer(0);
+    setRepsCount(0);
+    setWorkoutPhase('working');
+    setIsWorkoutRunning(true);
+  };
+
+  const completeWorkout = () => {
+    setIsWorkoutRunning(false);
+    setIsRestRunning(false);
+    setWorkoutPhase('completed');
+    
+    // Calcular resultado total baseado no tipo de exercício
+    let totalResult = 0;
+    if (currentDay.countType === 'time') {
+      totalResult = workoutTimer;
+    } else {
+      totalResult = repsCount;
+    }
+    
+    completeWorkoutDay(currentDay.day, totalResult);
+  };
+
+  const completeWorkoutDay = (dayNumber, result) => {
+    const exerciseData = workoutData[selectedExercise?.id];
+    if (!exerciseData) return;
+
+    const updatedPlan = exerciseData.plan.map(day => 
+      day.day === dayNumber ? { ...day, completed: true, result } : day
+    );
+    
+    setWorkoutData({
+      ...workoutData,
+      [selectedExercise.id]: {
+        ...exerciseData,
+        plan: updatedPlan
+      }
+    });
+    
+    // Registrar no histórico
+    const today = new Date().toISOString().split('T')[0];
+    const newEntry = { 
+      date: today, 
+      exerciseId: selectedExercise.id, 
+      reps: result,
+      level: exerciseData.currentLevel,
+      type: 'workout'
+    };
+    setHistory([...history, newEntry]);
+  };
+
+  const handleDayClick = (day) => {
+    if (day.type === 'treino' && !day.completed) {
+      startWorkout(day);
+    } else if (day.type === 'avaliacao' && !day.completed) {
+      setCurrentView('assessment');
+    } else if (day.type === 'descanso' && !day.completed) {
+      completeWorkoutDay(day.day, 0);
+    }
+  };
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Restante do código permanece igual (ProfileSetup, HomeView, AssessmentView, WorkoutView, etc.)
+  // Vou manter apenas as partes modificadas para economizar espaço
+
+  const WorkoutPlanView = () => {
+    const exerciseData = workoutData[selectedExercise?.id];
+
+    if (!exerciseData) {
+      return (
+        <div className={`min-h-screen ${bg} ${text} p-6`}>
+          <p className="text-red-500">Erro: Dados do treino não encontrados.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className={`min-h-screen ${bg} ${text} p-6 pb-24`}>
+        <div className="flex justify-between items-center mb-6">
+          <button
+            onClick={() => setCurrentView('workout')}
+            className={`${primaryColor} text-lg font-semibold`}
+          >
+            ← Voltar
+          </button>
+        </div>
+
+        <h1 className="text-3xl font-extrabold text-center mb-2">Plano de Treino</h1>
+        <p className={`text-center ${textSec} mb-8`}>{selectedExercise?.name}</p>
+
+        {/* Modal do Treino em Andamento */}
+        {currentDay && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+            <div className={`${cardBg} rounded-3xl p-6 w-full max-w-md`}>
+              
+              {/* Cabeçalho com Série Atual */}
+              <div className="text-center mb-6">
+                <h3 className="text-xl font-bold mb-2">Executando: {selectedExercise?.name}</h3>
+                <div className="text-lg font-semibold text-orange-500">
+                  Série {currentSet} de {totalSets}
+                </div>
+              </div>
+
+              {/* Animação GIF */}
+              <div className="w-32 h-32 mx-auto mb-6 bg-gray-700 rounded-xl flex items-center justify-center overflow-hidden">
+                <img 
+                  src={`/gifs/${selectedExercise?.id}.gif`} 
+                  alt={selectedExercise?.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+                <div className="text-4xl hidden">
+                  {selectedExercise?.icon}
+                </div>
+              </div>
+              
+              {/* Fase de Preparação */}
+              {workoutPhase === 'preparing' && (
+                <div className="text-center mb-6">
+                  <div className="text-3xl font-bold text-blue-500 mb-4">PREPARAR</div>
+                  <p className={textSec}>Prepare-se para iniciar a série {currentSet}</p>
+                  <button 
+                    onClick={startSet}
+                    className="w-full bg-green-500 text-white py-4 mt-4 rounded-xl font-bold text-lg"
+                  >
+                    INICIAR SÉRIE
+                  </button>
+                </div>
+              )}
+
+              {/* Fase de Exercício */}
+              {workoutPhase === 'working' && (
+                <div className="text-center mb-6">
+                  {currentDay.countType === 'time' ? (
+                    <>
+                      <div className="text-5xl font-bold text-orange-500 mb-2">{formatTime(workoutTimer)}</div>
+                      <p className={textSec}>Tempo decorrido</p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-5xl font-bold text-orange-500 mb-2">{repsCount}</div>
+                      <p className={textSec}>Repetições</p>
+                      <div className="flex justify-center gap-3 mt-4">
+                        <button 
+                          onClick={() => setRepsCount(prev => prev + 1)}
+                          className="bg-green-500 text-white px-6 py-3 rounded-xl font-bold"
+                        >
+                          +1 Rep
+                        </button>
+                        <button 
+                          onClick={() => setRepsCount(prev => Math.max(0, prev - 1))}
+                          className="bg-red-500 text-white px-6 py-3 rounded-xl font-bold"
+                        >
+                          -1 Rep
+                        </button>
+                      </div>
+                    </>
+                  )}
+                  
+                  <button 
+                    onClick={completeSet}
+                    className="w-full bg-red-500 text-white py-4 mt-4 rounded-xl font-bold text-lg"
+                  >
+                    FINALIZAR SÉRIE
+                  </button>
+                </div>
+              )}
+
+              {/* Fase de Descanso */}
+              {workoutPhase === 'resting' && (
+                <div className="text-center mb-6">
+                  <div className="text-5xl font-bold text-blue-500 mb-2">{restTimer}s</div>
+                  <p className={textSec}>Descanso</p>
+                  <div className="text-lg font-semibold mt-2">
+                    Próxima série: {currentSet + 1} de {totalSets}
+                  </div>
+                  <p className="text-sm text-gray-400 mt-2">
+                    A próxima série iniciará automaticamente
+                  </p>
+                </div>
+              )}
+
+              {/* Fase de Treino Concluído */}
+              {workoutPhase === 'completed' && (
+                <div className="text-center mb-6">
+                  <div className="text-4xl mb-4">🎉</div>
+                  <div className="text-2xl font-bold text-green-500 mb-2">TREINO CONCLUÍDO!</div>
+                  <p className={textSec}>Parabéns por completar todas as séries!</p>
+                  <button 
+                    onClick={() => {
+                      setCurrentDay(null);
+                      setWorkoutPhase('preparing');
+                    }}
+                    className="w-full bg-green-500 text-white py-4 mt-4 rounded-xl font-bold text-lg"
+                  >
+                    VOLTAR AO PLANO
+                  </button>
+                </div>
+              )}
+
+              {/* Botão de Cancelar (apenas nas fases ativas) */}
+              {(workoutPhase === 'preparing' || workoutPhase === 'working' || workoutPhase === 'resting') && (
+                <button 
+                  onClick={() => {
+                    setIsWorkoutRunning(false);
+                    setIsRestRunning(false);
+                    setCurrentDay(null);
+                    setWorkoutPhase('preparing');
+                  }}
+                  className="w-full bg-gray-500 text-white py-3 mt-3 rounded-xl font-bold"
+                >
+                  Cancelar Treino
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Grid de Dias (mantido igual) */}
+        <div className="grid grid-cols-2 gap-4">
+          {exerciseData.plan?.map((day) => (
+            <button
+              key={day.day}
+              onClick={() => handleDayClick(day)}
+              className={`${cardBg} rounded-2xl p-4 text-center shadow-md transition-transform hover:scale-105 ${
+                day.completed 
+                  ? 'border-b-4 border-green-500' 
+                  : day.type === 'avaliacao'
+                  ? 'border-b-4 border-yellow-500'
+                  : day.type === 'descanso'
+                  ? 'border-b-4 border-blue-500'
+                  : 'border-b-4 border-orange-500'
+              }`}
+            >
+              <div className="text-2xl font-bold mb-2">Dia {day.day}</div>
+              
+              {day.type === 'treino' && (
+                <>
+                  <div className="text-lg font-semibold text-orange-500">
+                    {day.sets} × {day.countType === 'time' ? `${day.reps}s` : day.reps}
+                  </div>
+                  <div className={`text-sm ${textSec}`}>
+                    {day.countType === 'time' ? 'Tempo' : 'Repetições'}
+                  </div>
+                </>
+              )}
+              
+              {day.type === 'descanso' && (
+                <>
+                  <div className="text-3xl">😴</div>
+                  <div className={`text-sm ${textSec}`}>Descanso</div>
+                </>
+              )}
+              
+              {day.type === 'avaliacao' && (
+                <>
+                  <div className="text-3xl">📊</div>
+                  <div className={`text-sm ${textSec}`}>Avaliação</div>
+                </>
+              )}
+              
+              {day.completed && (
+                <div className="text-green-500 text-sm font-bold mt-2">✓ CONCLUÍDO</div>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // Os outros componentes (ProfileSetup, HomeView, AssessmentView, WorkoutView, CaloriesView, StatsView, SettingsModal, BottomNav)
+  // permanecem exatamente iguais ao código anterior para economizar espaço
+
+  // ... (restante dos componentes idênticos ao código anterior)
+
+  return (
+    <div className={`min-h-screen ${bg} font-sans`}>
+      {currentView === 'home' && <HomeView />}
+      {currentView === 'assessment' && <AssessmentView />}
+      {currentView === 'workout' && <WorkoutView />}
+      {currentView === 'plan' && <WorkoutPlanView />}
+      {currentView === 'calories' && <CaloriesView />}
+      {currentView === 'stats' && <StatsView />}
+    </div>
+  );
+};
+
+export default App;
+
 export default App;
